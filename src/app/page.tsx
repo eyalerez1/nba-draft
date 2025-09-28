@@ -22,7 +22,10 @@ import {
   initializeAllTeams,
   updateTeamAfterDraft,
   undoTeamDraft,
-  analyzeCompetitiveInterest
+  analyzeCompetitiveInterest,
+  detectOpponentStrategy,
+  analyzeBiddingPatterns,
+  analyzeBudgetPressure
 } from '../utils/draftLogic';
 
 export default function Home() {
@@ -102,7 +105,7 @@ export default function Home() {
       rosterAnalysis,
       budgetAllocation
     }));
-  }, [draftState.playersDrafted, draftState.myRoster, draftState.selectedStrategy]);
+  }, [draftState.playersDrafted, draftState.myRoster, draftState.selectedStrategy, draftState.totalTeams]);
 
   const handleStrategyChange = (newStrategy: RosterStrategy) => {
     const rosterAnalysis = generateRosterAnalysis(draftState.myRoster, newStrategy);
@@ -359,45 +362,113 @@ export default function Home() {
                     </div>
                   </div>
 
-                  {/* Competition Analysis */}
-                  {draftState.allTeams && (
+                  {/* Advanced Competition Analysis */}
+                  {biddingRec?.advancedCompetitionAnalysis && (
                     (() => {
-                      const competitiveAnalysis = analyzeCompetitiveInterest(
-                        currentNomination.player,
-                        draftState.allTeams
+                      const analysis = biddingRec.advancedCompetitionAnalysis;
+                      const threatAssessment = analysis.threatAssessment;
+                      const highThreats = threatAssessment.threateningTeams.filter(t =>
+                        t.threatLevel === 'critical' || t.threatLevel === 'high'
+                      );
+                      const mediumThreats = threatAssessment.threateningTeams.filter(t =>
+                        t.threatLevel === 'medium'
                       );
 
                       return (
-                        <div className="bg-gray-50 p-3 rounded border">
-                          <div className="flex justify-between items-center mb-2">
-                            <span className="text-sm font-medium text-gray-700">Competition Analysis</span>
-                            <span className={`px-2 py-1 rounded text-xs font-medium ${
-                              competitiveAnalysis.interestedTeams === 0 ? 'bg-green-100 text-green-800' :
-                              competitiveAnalysis.interestedTeams <= 2 ? 'bg-yellow-100 text-yellow-800' :
-                              competitiveAnalysis.interestedTeams <= 4 ? 'bg-orange-100 text-orange-800' :
-                              'bg-red-100 text-red-800'
-                            }`}>
-                              {competitiveAnalysis.interestedTeams === 0 ? 'No Competition' :
-                               competitiveAnalysis.interestedTeams <= 2 ? 'Light Competition' :
-                               competitiveAnalysis.interestedTeams <= 4 ? 'Moderate Competition' :
-                               'Heavy Competition'}
-                            </span>
-                          </div>
-                          <div className="grid grid-cols-3 gap-4 text-xs text-gray-600">
-                            <div>
-                              <span className="block font-medium">{competitiveAnalysis.interestedTeams}</span>
-                              <span>Teams Interested</span>
-                            </div>
-                            <div>
-                              <span className="block font-medium">
-                                ${competitiveAnalysis.avgBudgetPerSlot > 0 ? Math.floor(competitiveAnalysis.avgBudgetPerSlot) : 0}
+                        <div className="bg-gray-50 p-4 rounded border space-y-3">
+                          <div className="flex justify-between items-center">
+                            <span className="text-sm font-medium text-gray-700">🎯 Advanced Competition Analysis</span>
+                            <div className="flex items-center gap-2">
+                              <span className={`px-2 py-1 rounded text-xs font-medium ${
+                                threatAssessment.competitionIntensity > 0.7 ? 'bg-red-100 text-red-800' :
+                                threatAssessment.competitionIntensity > 0.4 ? 'bg-orange-100 text-orange-800' :
+                                threatAssessment.competitionIntensity > 0.2 ? 'bg-yellow-100 text-yellow-800' :
+                                'bg-green-100 text-green-800'
+                              }`}>
+                                {threatAssessment.competitionIntensity > 0.7 ? '🔥 Intense' :
+                                 threatAssessment.competitionIntensity > 0.4 ? '⚠️ High' :
+                                 threatAssessment.competitionIntensity > 0.2 ? '⚡ Moderate' :
+                                 '🎯 Low'}
                               </span>
-                              <span>Avg Budget/Slot</span>
+                              <span className="text-xs text-gray-500">
+                                Strategy: {threatAssessment.recommendedStrategy.replace('_', ' ')}
+                              </span>
                             </div>
-                            <div>
-                              <span className="block font-medium">${competitiveAnalysis.maxCompetitorBudget}</span>
-                              <span>Max Competitor Budget</span>
+                          </div>
+
+                          {/* Key Metrics */}
+                          <div className="grid grid-cols-3 gap-4 text-xs">
+                            <div className="text-center">
+                              <span className="block text-lg font-bold text-gray-900">
+                                ${threatAssessment.expectedFinalCost}
+                              </span>
+                              <span className="text-gray-600">Expected Cost</span>
                             </div>
+                            <div className="text-center">
+                              <span className="block text-lg font-bold text-gray-900">
+                                {highThreats.length + mediumThreats.length}
+                              </span>
+                              <span className="text-gray-600">Active Bidders</span>
+                            </div>
+                            <div className="text-center">
+                              <span className="block text-lg font-bold text-gray-900">
+                                {Math.round(analysis.strategicRecommendations.confidenceLevel * 100)}%
+                              </span>
+                              <span className="text-gray-600">Confidence</span>
+                            </div>
+                          </div>
+
+                          {/* Threat Assessment */}
+                          {(highThreats.length > 0 || mediumThreats.length > 0) && (
+                            <div className="space-y-2">
+                              <h4 className="text-xs font-medium text-gray-700">🚨 Team Threats</h4>
+
+                              {/* High Threats */}
+                              {highThreats.slice(0, 3).map((threat) => (
+                                <div key={threat.teamName} className="flex justify-between items-center p-2 bg-white rounded border-l-4 border-red-400">
+                                  <div className="flex items-center gap-2">
+                                    <span className={`w-2 h-2 rounded-full ${
+                                      threat.threatLevel === 'critical' ? 'bg-red-600' : 'bg-orange-500'
+                                    }`}></span>
+                                    <span className="font-medium text-sm">{threat.teamName}</span>
+                                    <span className="text-xs text-gray-500">
+                                      ({Math.round(threat.bidProbability * 100)}% likely)
+                                    </span>
+                                  </div>
+                                  <div className="text-right">
+                                    <div className="text-sm font-medium">${threat.maxLikelyBid}</div>
+                                    <div className="text-xs text-gray-500">max bid</div>
+                                  </div>
+                                </div>
+                              ))}
+
+                              {/* Medium Threats (collapsed) */}
+                              {mediumThreats.length > 0 && (
+                                <div className="text-xs text-gray-600">
+                                  + {mediumThreats.length} other teams with moderate interest
+                                </div>
+                              )}
+                            </div>
+                          )}
+
+                          {/* Strategic Recommendation */}
+                          <div className={`p-2 rounded text-xs ${
+                            analysis.strategicRecommendations.biddingApproach === 'aggressive' ? 'bg-red-50 text-red-700' :
+                            analysis.strategicRecommendations.biddingApproach === 'avoid' ? 'bg-gray-50 text-gray-700' :
+                            analysis.strategicRecommendations.biddingApproach === 'bluff' ? 'bg-orange-50 text-orange-700' :
+                            'bg-blue-50 text-blue-700'
+                          }`}>
+                            <span className="font-medium">
+                              {analysis.strategicRecommendations.biddingApproach === 'aggressive' ? '⚡ Bid Aggressively' :
+                               analysis.strategicRecommendations.biddingApproach === 'avoid' ? '🚫 Avoid This Player' :
+                               analysis.strategicRecommendations.biddingApproach === 'bluff' ? '🎭 Bluff Opportunity' :
+                               '⏳ Patient Bidding'}
+                            </span>
+                            {analysis.strategicRecommendations.biddingApproach !== 'avoid' && (
+                              <span className="ml-2">
+                                - Max recommended: ${analysis.strategicRecommendations.maxRecommendedBid}
+                              </span>
+                            )}
                           </div>
                         </div>
                       );
@@ -712,6 +783,11 @@ export default function Home() {
                     const budgetPerSlot = team.slotsRemaining > 0 ? Math.floor(team.remainingBudget / team.slotsRemaining) : 0;
                     const isMyTeam = team.isMyTeam;
 
+                    // Get advanced analysis for opponent teams
+                    const strategy = !isMyTeam ? detectOpponentStrategy(team, draftState.playersDrafted) : null;
+                    const patterns = !isMyTeam ? analyzeBiddingPatterns(team, draftState.playersDrafted) : null;
+                    const pressure = !isMyTeam ? analyzeBudgetPressure(team) : null;
+
                     return (
                       <div
                         key={team.teamName}
@@ -727,11 +803,48 @@ export default function Home() {
                             <span className="text-xs text-gray-500">
                               {team.playersOwned.length}/13 players
                             </span>
+
+                            {/* Strategy indicator for opponents */}
+                            {strategy && strategy.confidence > 0.3 && (
+                              <span className={`px-1.5 py-0.5 rounded text-xs font-medium ${
+                                strategy.detectedStrategy === 'stars_scrubs' ? 'bg-purple-100 text-purple-700' :
+                                strategy.detectedStrategy === 'punt_ft' ? 'bg-red-100 text-red-700' :
+                                strategy.detectedStrategy === 'punt_fg' ? 'bg-orange-100 text-orange-700' :
+                                strategy.detectedStrategy === 'balanced' ? 'bg-green-100 text-green-700' :
+                                'bg-gray-100 text-gray-700'
+                              }`} title={strategy.evidence.join(', ')}>
+                                {strategy.detectedStrategy === 'stars_scrubs' ? '⭐💰' :
+                                 strategy.detectedStrategy === 'punt_ft' ? '🚫FT' :
+                                 strategy.detectedStrategy === 'punt_fg' ? '🚫FG' :
+                                 strategy.detectedStrategy === 'punt_to' ? '🚫TO' :
+                                 strategy.detectedStrategy === 'punt_assists' ? '🚫AST' :
+                                 strategy.detectedStrategy === 'balanced' ? '⚖️' : '❓'}
+                              </span>
+                            )}
+
+                            {/* Budget pressure indicator */}
+                            {pressure && (
+                              <span className={`px-1.5 py-0.5 rounded text-xs font-medium ${
+                                pressure.pressureLevel === 'desperate' ? 'bg-red-100 text-red-700' :
+                                pressure.pressureLevel === 'high' ? 'bg-orange-100 text-orange-700' :
+                                pressure.pressureLevel === 'moderate' ? 'bg-yellow-100 text-yellow-700' :
+                                'bg-green-100 text-green-700'
+                              }`} title={`Budget pressure: ${pressure.pressureLevel}`}>
+                                {pressure.pressureLevel === 'desperate' ? '🆘' :
+                                 pressure.pressureLevel === 'high' ? '⚠️' :
+                                 pressure.pressureLevel === 'moderate' ? '⚡' : '😌'}
+                              </span>
+                            )}
                           </div>
                           <div className="text-right">
                             <div className="text-sm font-medium">${team.remainingBudget}</div>
                             <div className="text-xs text-gray-500">
                               ${budgetPerSlot}/slot
+                              {patterns && patterns.averageOverbid !== 0 && (
+                                <span className={`ml-1 ${patterns.averageOverbid > 0 ? 'text-red-600' : 'text-green-600'}`}>
+                                  ({patterns.averageOverbid > 0 ? '+' : ''}${patterns.averageOverbid.toFixed(0)})
+                                </span>
+                              )}
                             </div>
                           </div>
                         </div>
@@ -753,6 +866,13 @@ export default function Home() {
                                 </span>
                               )}
                             </div>
+                          </div>
+                        )}
+
+                        {/* Advanced insights for opponents */}
+                        {!isMyTeam && strategy && strategy.confidence > 0.5 && (
+                          <div className="mt-2 text-xs text-gray-500 italic">
+                            💡 {strategy.evidence[0]}
                           </div>
                         )}
                       </div>

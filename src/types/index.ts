@@ -77,6 +77,7 @@ export interface DraftState {
   budgetAllocation: BudgetAllocation;
   otherTeamsBudgets?: TeamBudgetInfo[]; // Optional tracking of other teams (legacy)
   allTeams: TeamInfo[]; // Comprehensive team tracking including my team
+  competitiveIntelligence?: CompetitiveIntelligence; // Advanced competition analysis
 }
 
 export interface BiddingRecommendation {
@@ -95,6 +96,7 @@ export interface BiddingRecommendation {
     valueEfficiency: number; // 0-20 points
     puntStrategy: number; // 0-15 points
   };
+  advancedCompetitionAnalysis?: AdvancedCompetitionAnalysis; // Enhanced competition intelligence
 }
 
 export interface NominationRecommendation {
@@ -143,4 +145,81 @@ export interface BudgetAllocation {
   latePhaseTarget: number;
   starPlayerBudget: number; // $ reserved for tier 1-2 players
   reasoning: string[];
+}
+
+// Advanced Competition Analysis Types
+export interface OpponentStrategy {
+  teamName: string;
+  detectedStrategy: RosterStrategy | 'unknown';
+  confidence: number; // 0-1
+  evidence: string[];
+  categoryFocus: FantasyCategory[]; // Categories they're prioritizing
+  positionFocus: Position[]; // Positions they're prioritizing
+}
+
+export interface BiddingPatterns {
+  teamName: string;
+  aggressiveness: 'conservative' | 'moderate' | 'aggressive';
+  bluffTendency: number; // 0-1, how often they bid without winning
+  averageOverbid: number; // How much above projected value they typically pay
+  positionPriorities: { [key in Position]: number }; // 0-1 priority score
+  tierPreferences: { [tier: number]: number }; // Preference for each tier
+  recentBehavior: {
+    lastFiveBids: number[]; // Actual costs of last 5 players they won
+    lastFiveOverbids: number[]; // Amount over projected value
+    bluffCount: number; // Times they bid but didn't win in last 10 nominations
+  };
+}
+
+export interface ThreatAssessment {
+  player: Player;
+  threateningTeams: {
+    teamName: string;
+    threatLevel: 'low' | 'medium' | 'high' | 'critical';
+    maxLikelyBid: number;
+    bidProbability: number; // 0-1 chance they'll bid
+    reasoning: string[];
+    strategicFit: number; // 0-1 how well player fits their strategy
+  }[];
+  recommendedStrategy: 'bid_early' | 'wait_and_see' | 'force_overbid' | 'avoid' | 'bluff_opportunity';
+  expectedFinalCost: number;
+  competitionIntensity: number; // 0-1 overall competition level
+}
+
+export interface BudgetPressure {
+  teamName: string;
+  pressureLevel: 'desperate' | 'high' | 'moderate' | 'comfortable';
+  mustFillPositions: Position[];
+  slotsRemaining: number;
+  averageBudgetPerSlot: number;
+  likelyToOverbid: boolean;
+  estimatedPanicPoint: number; // How many more picks until desperation
+  desperation: {
+    needsStarPlayer: boolean;
+    runningOutOfTime: boolean;
+    budgetConstraints: boolean;
+  };
+}
+
+export interface CompetitiveIntelligence {
+  opponentStrategies: OpponentStrategy[];
+  biddingPatterns: BiddingPatterns[];
+  budgetPressures: BudgetPressure[];
+  marketTrends: {
+    averageOverbid: number;
+    inflationRate: number; // How much above projected values players are going
+    positionInflation: { [key in Position]: number };
+    tierInflation: { [tier: number]: number };
+  };
+}
+
+export interface AdvancedCompetitionAnalysis {
+  threatAssessment: ThreatAssessment;
+  competitiveIntelligence: CompetitiveIntelligence;
+  strategicRecommendations: {
+    nominationTiming: 'now' | 'wait' | 'never';
+    biddingApproach: 'aggressive' | 'patient' | 'bluff' | 'avoid';
+    maxRecommendedBid: number;
+    confidenceLevel: number; // 0-1
+  };
 }
