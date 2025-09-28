@@ -89,7 +89,7 @@ export default function Home() {
 
   // Update nomination recommendations
   useEffect(() => {
-    const recs = getNominationRecommendations(draftState, 5);
+    const recs = getNominationRecommendations(draftState, 12);
     setNominationRecs(recs);
   }, [draftState]);
 
@@ -657,18 +657,32 @@ export default function Home() {
                 </div>
               ) : (
                 <div className="space-y-3">
-                  <h3 className="font-medium text-gray-900">Nomination Recommendations</h3>
-                  {nominationRecs.map((rec) => {
+                  <div className="flex justify-between items-center">
+                    <h3 className="font-medium text-gray-900">Nomination Recommendations</h3>
+                    <span className="text-sm text-gray-500">{nominationRecs.length} suggestions</span>
+                  </div>
+                  <div className="relative">
+                    <div className="max-h-96 overflow-y-auto space-y-3 pr-2 scrollbar-thin scrollbar-thumb-gray-300 scrollbar-track-gray-100">
+                      {nominationRecs.map((rec) => {
                     const competitiveAnalysis = draftState.allTeams ?
                       analyzeCompetitiveInterest(rec.player, draftState.allTeams) :
                       { interestedTeams: 0, avgBudgetPerSlot: 0, maxCompetitorBudget: 0 };
 
                     return (
-                      <div key={rec.player.id} className="border rounded-lg p-4">
+                      <div key={rec.player.id} className="border rounded-lg p-3 hover:bg-gray-50 transition-colors">
                         <div className="flex justify-between items-start mb-2">
-                          <div className="flex-1">
+                          <div className="flex-1 min-w-0">
                             <div className="flex items-center gap-2 mb-1">
-                              <h3 className="font-medium">{rec.player.name}</h3>
+                              <h4 className="font-medium text-sm truncate">{rec.player.name}</h4>
+                              <span className={`px-2 py-1 rounded text-xs font-medium ${
+                                rec.player.tier === 1 ? 'bg-purple-100 text-purple-800' :
+                                rec.player.tier === 2 ? 'bg-blue-100 text-blue-800' :
+                                rec.player.tier === 3 ? 'bg-green-100 text-green-800' :
+                                rec.player.tier === 4 ? 'bg-yellow-100 text-yellow-800' :
+                                'bg-gray-100 text-gray-800'
+                              }`}>
+                                T{rec.player.tier}
+                              </span>
                               {/* Competition Indicator */}
                               <span className={`px-1.5 py-0.5 rounded text-xs font-medium ${
                                 competitiveAnalysis.interestedTeams === 0 ? 'bg-green-100 text-green-700' :
@@ -680,35 +694,37 @@ export default function Home() {
                                  competitiveAnalysis.interestedTeams <= 2 ? '⚡' :
                                  competitiveAnalysis.interestedTeams <= 4 ? '⚠️' : '🔥'}
                               </span>
+                              <span className={`px-2 py-1 rounded text-xs font-medium ${
+                                rec.strategy === 'target'
+                                  ? 'bg-blue-100 text-blue-800'
+                                  : 'bg-orange-100 text-orange-800'
+                              }`}>
+                                {rec.strategy === 'target' ? 'Target' : 'Force'}
+                              </span>
                             </div>
-                            <p className="text-sm text-gray-600">
+                            <p className="text-xs text-gray-600 mb-1">
                               {rec.player.team} - {rec.player.positions.join('/')} - ${rec.player.projectedValue}
                             </p>
+                            <p className="text-xs text-gray-500 truncate">
+                              {rec.reasoning[0]} {rec.reasoning.length > 1 && `(+${rec.reasoning.length - 1} more)`}
+                            </p>
                           </div>
-                          <div className="text-right">
-                            <span className={`px-2 py-1 rounded text-xs font-medium ${
-                              rec.strategy === 'target'
-                                ? 'bg-blue-100 text-blue-800'
-                                : 'bg-orange-100 text-orange-800'
-                            }`}>
-                              {rec.strategy === 'target' ? 'Target' : 'Force Spend'}
-                            </span>
-                          </div>
+                          <button
+                            onClick={() => setSelectedPlayerForNomination(rec.player)}
+                            className="ml-3 bg-blue-500 text-white px-3 py-1 rounded text-xs hover:bg-blue-600 flex-shrink-0"
+                          >
+                            Nominate
+                          </button>
                         </div>
-                        <ul className="text-sm text-gray-600 space-y-1">
-                          {rec.reasoning.map((reason, i) => (
-                            <li key={i}>• {reason}</li>
-                          ))}
-                        </ul>
-                        <button
-                          onClick={() => setSelectedPlayerForNomination(rec.player)}
-                          className="mt-2 text-blue-500 hover:text-blue-700 text-sm font-medium"
-                        >
-                          Nominate This Player
-                        </button>
                       </div>
                     );
                   })}
+                    </div>
+                    {/* Scroll indicator gradient */}
+                    {nominationRecs.length > 6 && (
+                      <div className="absolute bottom-0 left-0 right-0 h-6 bg-gradient-to-t from-white to-transparent pointer-events-none"></div>
+                    )}
+                  </div>
                 </div>
               )}
             </div>
