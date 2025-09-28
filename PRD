@@ -1,0 +1,71 @@
+Build an application called **NBA Fantasy Auction Draft Assistant**.
+
+**Context:**
+
+* NBA Fantasy Draft using the **auction method** with a fixed **$200 budget**.
+* The draft is live, with players nominated one at a time.
+* Most participants are knowledgeable NBA fans, so the assistant should provide competitive insights.
+* I will provide the complete player pool, including stats, positions, and projected auction values (e.g., imported from Yahoo or another site).
+* The UI can be minimal—text-based or simple tables are fine.
+* I prefer the app to be implemented in **Next.js**, but framework choice is not critical.
+
+**Core Requirements:**
+
+1. **Bidding Recommendations (when another player is nominated):**
+
+   * Suggest whether I should bid.
+   * Provide a recommended maximum bid value.
+   * Consider:
+
+     * My remaining budget.
+     * My current roster needs (positions filled vs. open).
+     * The player’s projected value relative to cost.
+     * Tier/positional scarcity (e.g., if only a few elite PGs remain).
+     * Opportunity cost of saving money for future players.
+
+2. **Nomination Recommendations (when it’s my turn to nominate):**
+
+   * Suggest the best player(s) to nominate.
+   * Possible strategies to support:
+
+     * Nominate a player I actually want to win.
+     * Nominate a player I don’t want, to force others to spend money.
+   * The app should recommend which approach makes sense given the stage of the draft and my roster/budget status.
+
+3. **Draft Tracking:**
+
+   * Keep track of:
+
+     * My current roster (players, positions, salaries).
+     * Remaining budget.
+     * Which players have already been drafted (off the board).
+   * Update recommendations dynamically as the draft progresses.
+
+4. **AI-Powered Decision Logic:**
+
+   * Use AI to analyze the player pool, my roster, and auction progress.
+   * Factors AI should weigh:
+
+     * Player value vs. cost efficiency.
+     * Positional balance (avoiding gaps).
+     * Roster construction strategy (e.g., stars + scrubs vs. balanced build).
+     * Draft inflation/deflation trends (are players going over or under projected value?).
+     * Remaining budget distribution across all teams (how much money other managers still have).
+
+5. **Inputs & Outputs:**
+
+   * **Inputs:**
+
+     * Player list with stats and projected values (loaded manually by me).
+     * Real-time updates of nominations, bids, and drafted players.
+   * **Outputs:**
+
+     * Bid/nomination recommendations (with reasoning, not just numbers).
+     * Clear display of my roster, budget, and remaining needs.
+
+**Goal:**
+Create a tool that acts as a real-time strategy assistant during an NBA fantasy auction draft—helping me decide:
+
+* Whether to bid and how much.
+* Who to nominate and why.
+* How to manage my budget and roster for maximum value.
