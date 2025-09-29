@@ -1,5 +1,16 @@
-import { useState, useEffect } from 'react';
-import { DraftState, Player, RosterStrategy, BiddingRecommendation, NominationRecommendation } from '../types';
+import { useState, useEffect, useMemo } from 'react';
+import { DraftState, Player, RosterStrategy, BiddingRecommendation, NominationRecommendation, DraftedPlayer, MyRoster, TeamInfo } from '../types';
+
+// Core state type (without derived values)
+type CoreDraftState = {
+  totalBudget: number;
+  playersRemaining: Player[];
+  playersDrafted: DraftedPlayer[];
+  myRoster: MyRoster;
+  totalTeams: number;
+  selectedStrategy: RosterStrategy;
+  allTeams: TeamInfo[];
+};
 import { samplePlayers } from '../data/players';
 import {
   initializeRoster,
@@ -19,29 +30,45 @@ export const useDraftState = () => {
   const teamNames = ['Eyal', 'Ben', 'Shtemler', 'Shtark', 'Topaz', 'Yoav', 'Hertz', 'Lior', 'Shachar', 'Shay'];
   const initialTeams = initializeAllTeams(teamNames, 200);
 
-  const [draftState, setDraftState] = useState<DraftState>({
+  // Core state that can be directly modified
+  const [coreState, setCoreState] = useState<CoreDraftState>({
     totalBudget: 200,
     playersRemaining: samplePlayers,
     playersDrafted: [],
     myRoster: initialRoster,
-    draftPhase: 'early',
     totalTeams: 10,
     selectedStrategy: initialStrategy,
-    rosterAnalysis: generateRosterAnalysis(initialRoster, initialStrategy),
-    budgetAllocation: calculateBudgetAllocation({
-      totalBudget: 200,
-      playersRemaining: samplePlayers,
-      playersDrafted: [],
-      myRoster: initialRoster,
-      draftPhase: 'early',
-      totalTeams: 10,
-      selectedStrategy: initialStrategy,
-      rosterAnalysis: generateRosterAnalysis(initialRoster, initialStrategy),
-      budgetAllocation: { earlyPhaseTarget: 80, middlePhaseTarget: 80, latePhaseTarget: 40, starPlayerBudget: 100, reasoning: [] },
-      allTeams: initialTeams
-    }),
     allTeams: initialTeams
   });
+
+  // Derived values computed from core state
+  const draftPhase = useMemo(() => 
+    getDraftPhase(coreState.playersDrafted, coreState.totalTeams * 13),
+    [coreState.playersDrafted, coreState.totalTeams]
+  );
+
+  const rosterAnalysis = useMemo(() => 
+    generateRosterAnalysis(coreState.myRoster, coreState.selectedStrategy),
+    [coreState.myRoster, coreState.selectedStrategy]
+  );
+
+  const budgetAllocation = useMemo(() => {
+    const tempDraftState = {
+      ...coreState,
+      draftPhase,
+      rosterAnalysis,
+      budgetAllocation: { earlyPhaseTarget: 80, middlePhaseTarget: 80, latePhaseTarget: 40, starPlayerBudget: 100, reasoning: [] }
+    };
+    return calculateBudgetAllocation(tempDraftState);
+  }, [coreState, draftPhase, rosterAnalysis]);
+
+  // Complete draft state combining core and derived values
+  const draftState: DraftState = useMemo(() => ({
+    ...coreState,
+    draftPhase,
+    rosterAnalysis,
+    budgetAllocation
+  }), [coreState, draftPhase, rosterAnalysis, budgetAllocation]);
 
   const [currentNomination, setCurrentNomination] = useState<{
     player: Player;
@@ -72,29 +99,10 @@ export const useDraftState = () => {
     setNominationRecs(recs);
   }, [draftState]);
 
-  // Update draft phase and analysis
-  useEffect(() => {
-    const phase = getDraftPhase(draftState.playersDrafted, draftState.totalTeams * 13);
-    const rosterAnalysis = generateRosterAnalysis(draftState.myRoster, draftState.selectedStrategy);
-    const budgetAllocation = calculateBudgetAllocation({ ...draftState, draftPhase: phase, rosterAnalysis });
-
-    setDraftState(prev => ({
-      ...prev,
-      draftPhase: phase,
-      rosterAnalysis,
-      budgetAllocation
-    }));
-  }, [draftState]);
-
   const handleStrategyChange = (newStrategy: RosterStrategy) => {
-    const rosterAnalysis = generateRosterAnalysis(draftState.myRoster, newStrategy);
-    const budgetAllocation = calculateBudgetAllocation({ ...draftState, selectedStrategy: newStrategy, rosterAnalysis });
-
-    setDraftState(prev => ({
+    setCoreState(prev => ({
       ...prev,
-      selectedStrategy: newStrategy,
-      rosterAnalysis,
-      budgetAllocation
+      selectedStrategy: newStrategy
     }));
   };
 
@@ -136,7 +144,7 @@ export const useDraftState = () => {
         updatedRoster.remainingBudget -= finalBid;
       }
 
-      setDraftState(prev => ({
+      setCoreState(prev => ({
         ...prev,
         playersRemaining: prev.playersRemaining.filter(p => p.id !== playerId),
         playersDrafted: [...prev.playersDrafted, draftedPlayer],
@@ -144,7 +152,7 @@ export const useDraftState = () => {
         allTeams: updatedTeams
       }));
     } else {
-      setDraftState(prev => ({
+      setCoreState(prev => ({
         ...prev,
         playersRemaining: prev.playersRemaining.filter(p => p.id !== playerId),
         playersDrafted: [...prev.playersDrafted, draftedPlayer],
@@ -180,7 +188,7 @@ export const useDraftState = () => {
         updatedRoster.remainingBudget += actualCost;
       }
 
-      setDraftState(prev => ({
+      setCoreState(prev => ({
         ...prev,
         playersRemaining: [
           ...prev.playersRemaining,
@@ -194,7 +202,7 @@ export const useDraftState = () => {
       }));
     } else {
       // Just remove from drafted players and add back to available
-      setDraftState(prev => ({
+      setCoreState(prev => ({
         ...prev,
         playersRemaining: [
           ...prev.playersRemaining,
