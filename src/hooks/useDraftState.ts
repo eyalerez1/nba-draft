@@ -9,6 +9,7 @@ type CoreDraftState = {
   myRoster: MyRoster;
   totalTeams: number;
   selectedStrategy: RosterStrategy;
+  selectedTeam: string;
   allTeams: TeamInfo[];
 };
 import { samplePlayers } from '../data/players';
@@ -59,19 +60,23 @@ const clearDraftStateFromStorage = () => {
 export const useDraftState = () => {
   const initialRoster = initializeRoster();
   const initialStrategy: RosterStrategy = 'balanced';
-  const teamNames = ['Eyal', 'Ben', 'Shtemler', 'Shtark', 'Topaz', 'Yoav', 'Hertz', 'Lior', 'Shachar', 'Shay'];
-  const initialTeams = initializeAllTeams(teamNames, 200);
+  const initialSelectedTeam = 'Eyal';
+  const teamNames = useMemo(() => ['Eyal', 'Ben', 'Shtemler', 'Shtark', 'Topaz', 'Yoav', 'Hertz', 'Lior', 'Shachar', 'Shay'], []);
 
   // Create initial state
-  const createInitialState = useCallback((): CoreDraftState => ({
-    totalBudget: 200,
-    playersRemaining: samplePlayers,
-    playersDrafted: [],
-    myRoster: initialRoster,
-    totalTeams: 10,
-    selectedStrategy: initialStrategy,
-    allTeams: initialTeams
-  }), [initialRoster, initialStrategy, initialTeams]);
+  const createInitialState = useCallback((selectedTeam: string = initialSelectedTeam): CoreDraftState => {
+    const initialTeams = initializeAllTeams(teamNames, selectedTeam, 200);
+    return {
+      totalBudget: 200,
+      playersRemaining: samplePlayers,
+      playersDrafted: [],
+      myRoster: initialRoster,
+      totalTeams: 10,
+      selectedStrategy: initialStrategy,
+      selectedTeam: selectedTeam,
+      allTeams: initialTeams
+    };
+  }, [initialRoster, initialStrategy, teamNames, initialSelectedTeam]);
 
   // Initialize state from localStorage or create new
   const [coreState, setCoreState] = useState<CoreDraftState>(() => {
@@ -79,6 +84,15 @@ export const useDraftState = () => {
     if (typeof window !== 'undefined') {
       const savedState = loadDraftStateFromStorage();
       if (savedState) {
+        // Ensure the saved state has the selectedTeam field (for backward compatibility)
+        if (!savedState.selectedTeam) {
+          savedState.selectedTeam = initialSelectedTeam;
+          // Update team isMyTeam flags based on selected team
+          savedState.allTeams = savedState.allTeams.map(team => ({
+            ...team,
+            isMyTeam: team.teamName === savedState.selectedTeam
+          }));
+        }
         return savedState;
       }
     }
@@ -152,11 +166,23 @@ export const useDraftState = () => {
 
   // Reset draft function
   const handleResetDraft = useCallback(() => {
-    const newState = createInitialState();
+    const newState = createInitialState(coreState.selectedTeam);
     setCoreState(newState);
     setCurrentNomination(null);
     clearDraftStateFromStorage();
-  }, [createInitialState]);
+  }, [createInitialState, coreState.selectedTeam]);
+
+  // Change selected team function
+  const handleTeamChange = useCallback((newTeam: string) => {
+    setCoreState(prev => ({
+      ...prev,
+      selectedTeam: newTeam,
+      allTeams: prev.allTeams.map(team => ({
+        ...team,
+        isMyTeam: team.teamName === newTeam
+      }))
+    }));
+  }, []);
 
   const handleStrategyChange = (newStrategy: RosterStrategy) => {
     setCoreState(prev => ({
@@ -184,7 +210,7 @@ export const useDraftState = () => {
       return team;
     });
 
-    if (draftedBy === 'Eyal') {
+    if (draftedBy === coreState.selectedTeam) {
       // Update my roster
       const updatedRoster = { ...draftState.myRoster };
       const availableSlot = updatedRoster.slots.find(slot =>
@@ -236,7 +262,7 @@ export const useDraftState = () => {
       return team;
     });
 
-    if (draftedBy === 'Eyal') {
+    if (draftedBy === coreState.selectedTeam) {
       // Update my roster - remove the player
       const updatedRoster = { ...draftState.myRoster };
       const playerSlot = updatedRoster.slots.find(slot => slot.player?.id === lastDraftedPlayer.id);
@@ -292,11 +318,13 @@ export const useDraftState = () => {
     biddingRec,
     nominationRecs,
     teamNames,
+    selectedTeam: coreState.selectedTeam,
     handleStrategyChange,
     handleDraftPlayer,
     handleUndoLastPick,
     handleNominatePlayer,
     handleResetDraft,
+    handleTeamChange,
     setCurrentNomination
   };
 };

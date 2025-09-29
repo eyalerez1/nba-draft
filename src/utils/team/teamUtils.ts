@@ -1,7 +1,7 @@
 import { TeamInfo, DraftedPlayer, TeamBudgetInfo } from '../../types';
 
 // Initialize all teams for tracking
-export const initializeAllTeams = (teamNames: string[], totalBudget: number = 200): TeamInfo[] => {
+export const initializeAllTeams = (teamNames: string[], selectedTeam: string = 'Eyal', totalBudget: number = 200): TeamInfo[] => {
   return teamNames.map(name => ({
     teamName: name,
     remainingBudget: totalBudget,
@@ -17,7 +17,7 @@ export const initializeAllTeams = (teamNames: string[], totalBudget: number = 20
       fg_pct: 0, ft_pct: 0, threePointers: 0, turnovers: 0
     },
     averagePlayerValue: 0,
-    isMyTeam: name === 'Eyal'
+    isMyTeam: name === selectedTeam
   }));
 };
 

@@ -21,11 +21,13 @@ export default function Home() {
     biddingRec,
     nominationRecs,
     teamNames,
+    selectedTeam,
     handleStrategyChange,
     handleDraftPlayer,
     handleUndoLastPick,
     handleNominatePlayer,
-    handleResetDraft
+    handleResetDraft,
+    handleTeamChange
   } = useDraftState();
 
   // Modal states
@@ -66,10 +68,10 @@ export default function Home() {
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
           {/* Left Column - My Roster & Strategy */}
           <div className="space-y-6">
-            {/* Strategy Selection & Draft Controls */}
+            {/* Team Selection & Draft Controls */}
             <div className="bg-white rounded-lg shadow p-6">
               <div className="flex justify-between items-center mb-4">
-                <h2 className="text-xl font-semibold">Draft Strategy</h2>
+                <h2 className="text-xl font-semibold">Draft Settings</h2>
                 <button
                   onClick={() => {
                     if (window.confirm('Are you sure you want to reset the entire draft? This will clear all picks and cannot be undone.')) {
@@ -82,23 +84,48 @@ export default function Home() {
                   Reset Draft
                 </button>
               </div>
-              <select
-                value={draftState.selectedStrategy}
-                onChange={(e) => handleStrategyChange(e.target.value as 'balanced' | 'stars_scrubs' | 'punt_ft' | 'punt_fg' | 'punt_to' | 'punt_assists')}
-                className="w-full border rounded px-3 py-2"
-              >
-                <option value="balanced">Balanced</option>
-                <option value="stars_scrubs">Stars & Scrubs</option>
-                <option value="punt_ft">Punt FT%</option>
-                <option value="punt_fg">Punt FG%</option>
-                <option value="punt_to">Punt Turnovers</option>
-                <option value="punt_assists">Punt Assists</option>
-              </select>
+
+              <div className="space-y-4">
+                {/* Team Selection */}
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-2">
+                    Your Team
+                  </label>
+                  <select
+                    value={selectedTeam}
+                    onChange={(e) => handleTeamChange(e.target.value)}
+                    className="w-full border rounded px-3 py-2"
+                  >
+                    {teamNames.map(team => (
+                      <option key={team} value={team}>{team}</option>
+                    ))}
+                  </select>
+                </div>
+
+                {/* Strategy Selection */}
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-2">
+                    Draft Strategy
+                  </label>
+                  <select
+                    value={draftState.selectedStrategy}
+                    onChange={(e) => handleStrategyChange(e.target.value as 'balanced' | 'stars_scrubs' | 'punt_ft' | 'punt_fg' | 'punt_to' | 'punt_assists')}
+                    className="w-full border rounded px-3 py-2"
+                  >
+                    <option value="balanced">Balanced</option>
+                    <option value="stars_scrubs">Stars & Scrubs</option>
+                    <option value="punt_ft">Punt FT%</option>
+                    <option value="punt_fg">Punt FG%</option>
+                    <option value="punt_to">Punt Turnovers</option>
+                    <option value="punt_assists">Punt Assists</option>
+                  </select>
+                </div>
+              </div>
             </div>
 
             {/* My Roster */}
             <div className="bg-white rounded-lg shadow p-6">
-              <h2 className="text-xl font-semibold mb-4">My Roster</h2>
+              <h2 className="text-xl font-semibold mb-4">{selectedTeam}&apos;s Roster</h2>
               <div className="space-y-2">
                 {draftState.myRoster.slots.map((slot, slotIndex) => (
                   <div key={slotIndex} className="flex justify-between items-center p-2 border rounded">
