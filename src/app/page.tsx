@@ -131,7 +131,15 @@ export default function Home() {
 
               <div className="space-y-3">
                 {nominationRecs.slice(0, 8).map((rec) => (
-                  <div key={rec.player.id} className="border rounded-lg p-3 hover:bg-gray-50">
+                  <div
+                    key={rec.player.id}
+                    className="border rounded-lg p-3 hover:bg-blue-50 hover:border-blue-200 cursor-pointer transition-all duration-200"
+                    onClick={() => {
+                      setSelectedPlayerForNomination(rec.player);
+                      setShowNominationForm(true);
+                    }}
+                    title="Click to nominate this player"
+                  >
                     <div className="flex justify-between items-start">
                       <div>
                         <div className="flex items-center gap-2">

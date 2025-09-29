@@ -42,12 +42,12 @@ export const useDraftState = () => {
   });
 
   // Derived values computed from core state
-  const draftPhase = useMemo(() => 
+  const draftPhase = useMemo(() =>
     getDraftPhase(coreState.playersDrafted, coreState.totalTeams * 13),
     [coreState.playersDrafted, coreState.totalTeams]
   );
 
-  const rosterAnalysis = useMemo(() => 
+  const rosterAnalysis = useMemo(() =>
     generateRosterAnalysis(coreState.myRoster, coreState.selectedStrategy),
     [coreState.myRoster, coreState.selectedStrategy]
   );
