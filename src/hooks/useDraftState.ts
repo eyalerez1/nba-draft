@@ -1,4 +1,4 @@
-import { useState, useEffect, useMemo } from 'react';
+import { useState, useEffect, useMemo, useCallback } from 'react';
 import { DraftState, Player, RosterStrategy, BiddingRecommendation, NominationRecommendation, DraftedPlayer, MyRoster, TeamInfo } from '../types';
 
 // Core state type (without derived values)
@@ -24,14 +24,46 @@ import {
   undoTeamDraft
 } from '../utils';
 
+// localStorage key for persisting draft state
+const DRAFT_STATE_KEY = 'nba-draft-state';
+
+// Utility functions for localStorage
+const saveDraftStateToStorage = (state: CoreDraftState) => {
+  try {
+    localStorage.setItem(DRAFT_STATE_KEY, JSON.stringify(state));
+  } catch (error) {
+    console.warn('Failed to save draft state to localStorage:', error);
+  }
+};
+
+const loadDraftStateFromStorage = (): CoreDraftState | null => {
+  try {
+    const saved = localStorage.getItem(DRAFT_STATE_KEY);
+    if (saved) {
+      return JSON.parse(saved);
+    }
+  } catch (error) {
+    console.warn('Failed to load draft state from localStorage:', error);
+  }
+  return null;
+};
+
+const clearDraftStateFromStorage = () => {
+  try {
+    localStorage.removeItem(DRAFT_STATE_KEY);
+  } catch (error) {
+    console.warn('Failed to clear draft state from localStorage:', error);
+  }
+};
+
 export const useDraftState = () => {
   const initialRoster = initializeRoster();
   const initialStrategy: RosterStrategy = 'balanced';
   const teamNames = ['Eyal', 'Ben', 'Shtemler', 'Shtark', 'Topaz', 'Yoav', 'Hertz', 'Lior', 'Shachar', 'Shay'];
   const initialTeams = initializeAllTeams(teamNames, 200);
 
-  // Core state that can be directly modified
-  const [coreState, setCoreState] = useState<CoreDraftState>({
+  // Create initial state
+  const createInitialState = useCallback((): CoreDraftState => ({
     totalBudget: 200,
     playersRemaining: samplePlayers,
     playersDrafted: [],
@@ -39,6 +71,18 @@ export const useDraftState = () => {
     totalTeams: 10,
     selectedStrategy: initialStrategy,
     allTeams: initialTeams
+  }), [initialRoster, initialStrategy, initialTeams]);
+
+  // Initialize state from localStorage or create new
+  const [coreState, setCoreState] = useState<CoreDraftState>(() => {
+    // Only try to load from localStorage on client side
+    if (typeof window !== 'undefined') {
+      const savedState = loadDraftStateFromStorage();
+      if (savedState) {
+        return savedState;
+      }
+    }
+    return createInitialState();
   });
 
   // Derived values computed from core state
@@ -98,6 +142,21 @@ export const useDraftState = () => {
     const recs = getNominationRecommendations(draftState, 12);
     setNominationRecs(recs);
   }, [draftState]);
+
+  // Save state to localStorage whenever coreState changes
+  useEffect(() => {
+    if (typeof window !== 'undefined') {
+      saveDraftStateToStorage(coreState);
+    }
+  }, [coreState]);
+
+  // Reset draft function
+  const handleResetDraft = useCallback(() => {
+    const newState = createInitialState();
+    setCoreState(newState);
+    setCurrentNomination(null);
+    clearDraftStateFromStorage();
+  }, [createInitialState]);
 
   const handleStrategyChange = (newStrategy: RosterStrategy) => {
     setCoreState(prev => ({
@@ -237,6 +296,7 @@ export const useDraftState = () => {
     handleDraftPlayer,
     handleUndoLastPick,
     handleNominatePlayer,
+    handleResetDraft,
     setCurrentNomination
   };
 };

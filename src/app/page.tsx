@@ -24,7 +24,8 @@ export default function Home() {
     handleStrategyChange,
     handleDraftPlayer,
     handleUndoLastPick,
-    handleNominatePlayer
+    handleNominatePlayer,
+    handleResetDraft
   } = useDraftState();
 
   // Modal states
@@ -53,14 +54,34 @@ export default function Home() {
   return (
     <div className="min-h-screen bg-gray-100">
       <div className="container mx-auto px-4 py-8">
-        <h1 className="text-3xl font-bold text-center mb-8">NBA Draft Assistant</h1>
+        <div className="text-center mb-8">
+          <h1 className="text-3xl font-bold">NBA Draft Assistant</h1>
+          {draftState.playersDrafted.length > 0 && (
+            <p className="text-sm text-green-600 mt-2">
+              ✓ Draft state restored from browser storage ({draftState.playersDrafted.length} picks)
+            </p>
+          )}
+        </div>
 
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
           {/* Left Column - My Roster & Strategy */}
           <div className="space-y-6">
-            {/* Strategy Selection */}
+            {/* Strategy Selection & Draft Controls */}
             <div className="bg-white rounded-lg shadow p-6">
-              <h2 className="text-xl font-semibold mb-4">Draft Strategy</h2>
+              <div className="flex justify-between items-center mb-4">
+                <h2 className="text-xl font-semibold">Draft Strategy</h2>
+                <button
+                  onClick={() => {
+                    if (window.confirm('Are you sure you want to reset the entire draft? This will clear all picks and cannot be undone.')) {
+                      handleResetDraft();
+                    }
+                  }}
+                  className="px-3 py-1 bg-red-600 text-white text-sm rounded hover:bg-red-700 transition-colors"
+                  title="Reset entire draft"
+                >
+                  Reset Draft
+                </button>
+              </div>
               <select
                 value={draftState.selectedStrategy}
                 onChange={(e) => handleStrategyChange(e.target.value as 'balanced' | 'stars_scrubs' | 'punt_ft' | 'punt_fg' | 'punt_to' | 'punt_assists')}
