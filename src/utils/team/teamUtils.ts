@@ -1,4 +1,4 @@
-import { TeamInfo, DraftedPlayer, Position } from '../../types';
+import { TeamInfo, DraftedPlayer, TeamBudgetInfo } from '../../types';
 
 // Initialize all teams for tracking
 export const initializeAllTeams = (teamNames: string[], totalBudget: number = 200): TeamInfo[] => {
@@ -136,4 +136,32 @@ export const getTeamActualStats = (team: TeamInfo) => {
   }
 
   return totals;
+};
+
+// Helper function to create team budget tracking
+export const createTeamBudgetInfo = (
+  teamName: string,
+  remainingBudget: number,
+  playersOwned: number,
+  totalRosterSlots: number = 13
+): TeamBudgetInfo => {
+  return {
+    teamName,
+    remainingBudget,
+    playersOwned,
+    slotsRemaining: totalRosterSlots - playersOwned
+  };
+};
+
+// Helper function to update team budget after a player is drafted
+export const updateTeamBudget = (
+  teamBudget: TeamBudgetInfo,
+  playerCost: number
+): TeamBudgetInfo => {
+  return {
+    ...teamBudget,
+    remainingBudget: teamBudget.remainingBudget - playerCost,
+    playersOwned: teamBudget.playersOwned + 1,
+    slotsRemaining: teamBudget.slotsRemaining - 1
+  };
 };

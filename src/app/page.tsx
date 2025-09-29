@@ -12,7 +12,7 @@ import {
   detectOpponentStrategy,
   analyzeBiddingPatterns,
   analyzeBudgetPressure
-} from '../utils/analysis/competitiveAnalysis';
+} from '../utils/analysis/advancedCompetitionAnalysis';
 
 export default function Home() {
   const {

@@ -1,13 +1,13 @@
 import React from 'react';
-import { DraftState, DraftedPlayer } from '../../types';
+import { DraftState, TeamInfo, OpponentStrategy, BiddingPatterns, BudgetPressure } from '../../types';
 
 interface LeagueOverviewProps {
   draftState: DraftState;
   onOpenTeamComparison: () => void;
   onUndoLastPick: () => void;
-  detectOpponentStrategy: (team: any, playersDrafted: DraftedPlayer[]) => any;
-  analyzeBiddingPatterns: (team: any, playersDrafted: DraftedPlayer[]) => any;
-  analyzeBudgetPressure: (team: any) => any;
+  detectOpponentStrategy: (team: TeamInfo) => OpponentStrategy;
+  analyzeBiddingPatterns: (team: TeamInfo) => BiddingPatterns;
+  analyzeBudgetPressure: (team: TeamInfo) => BudgetPressure;
 }
 
 export const LeagueOverview: React.FC<LeagueOverviewProps> = ({
@@ -46,8 +46,8 @@ export const LeagueOverview: React.FC<LeagueOverviewProps> = ({
             const budgetPerSlot = team.slotsRemaining > 0 ? team.remainingBudget / team.slotsRemaining : 0;
 
             // Get advanced analysis for opponent teams
-            const strategy = !isMyTeam ? detectOpponentStrategy(team, draftState.playersDrafted) : null;
-            const patterns = !isMyTeam ? analyzeBiddingPatterns(team, draftState.playersDrafted) : null;
+            const strategy = !isMyTeam ? detectOpponentStrategy(team) : null;
+            const patterns = !isMyTeam ? analyzeBiddingPatterns(team) : null;
             const pressure = !isMyTeam ? analyzeBudgetPressure(team) : null;
 
             return (
